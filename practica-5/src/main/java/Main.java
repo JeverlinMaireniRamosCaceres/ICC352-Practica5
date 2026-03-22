@@ -10,6 +10,9 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.util.ArrayList;
 
 public class Main {
 
@@ -17,6 +20,9 @@ public class Main {
 
         // Levantar H2 como servidor
         BootStrapServices.getInstancia().init();
+
+        // Crear tabla en CockroachDB
+        LoginJDBC.inicializarTabla();
 
         // Crear usuario administrador por defecto
         Usuario admin = UsuarioServices.getInstancia().findByUsername("admin");
@@ -129,6 +135,52 @@ public class Main {
             ctx.render("templates/index.html", model);
         });
 
+        // Paginacion con AJAX
+        app.get("/articulos/pagina", ctx -> {
+
+            int tam = 5;
+            int pag = 1;
+
+            String p = ctx.queryParam("page");
+            if (p != null) {
+                try { pag = Integer.parseInt(p); } catch (Exception ignored) {}
+            }
+
+            if (pag < 1) pag = 1;
+
+            long total = ArticuloServices.getInstancia().contarArticulos();
+            int totalPages = (int) Math.ceil((double) total / tam);
+
+            if (totalPages == 0) totalPages = 1;
+            if (pag > totalPages) pag = totalPages;
+
+            List<Articulo> articulos = ArticuloServices.getInstancia().listarPaginado(pag, tam);
+
+            // Construir respuesta con Jackson
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new JavaTimeModule());
+
+            List<Map<String, Object>> listaArticulos = new ArrayList<>();
+            for (Articulo a : articulos) {
+                Map<String, Object> art = new HashMap<>();
+                art.put("id", a.getId());
+                art.put("titulo", a.getTitulo());
+                art.put("cuerpo", a.getCuerpo().substring(0, Math.min(70, a.getCuerpo().length())));
+                art.put("fecha", a.getFecha() != null ? a.getFecha().toString() : "");
+                art.put("etiquetas", a.getListaEtiquetas().stream()
+                        .map(Etiqueta::getEtiqueta)
+                        .toList());
+                listaArticulos.add(art);
+            }
+
+            Map<String, Object> respuesta = new HashMap<>();
+            respuesta.put("page", pag);
+            respuesta.put("totalPages", totalPages);
+            respuesta.put("articulos", listaArticulos);
+
+            ctx.contentType("application/json");
+            ctx.result(mapper.writeValueAsString(respuesta));
+        });
 
         // Procesar login
         app.post("/procesamientoLogin", ctx -> {

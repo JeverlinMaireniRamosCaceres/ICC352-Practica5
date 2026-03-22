@@ -35,6 +35,11 @@ dependencies {
     implementation 'com.h2database:h2:2.1.214'
     implementation 'org.postgresql:postgresql:42.3.8'
 
+    // Jackson
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.20.1'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.1'
+
+
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -42,4 +47,11 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+run {
+    def jdbcUrl = project.findProperty("JDBC_DATABASE_URL")
+            ?: System.getenv("JDBC_DATABASE_URL")
+            ?: ""
+    environment "JDBC_DATABASE_URL", jdbcUrl
 }
