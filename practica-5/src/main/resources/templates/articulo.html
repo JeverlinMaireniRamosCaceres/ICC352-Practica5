@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Blog</title>
+    <link rel="stylesheet" href="/css/estilos.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <div class="container">
+        <!-- HEADER -->
+        <header class="blog-header py-3">
+            <div class="row flex-nowrap justify-content-between align-items-center">
+                <!-- TITULO DEL BLOG-->
+                <div class="col-4 text-center">
+                    <a class="blog-header-logo" href="/">El blog académico</a>
+                </div>
+
+                <!-- BOTON LOGIN/LOGOUT -->
+                <div class="col-4 d-flex justify-content-end align-items-center">
+
+                    <!-- BOTON PARA CREAR NUEVO ARTICULO, SOLO AUTORES O ADMINISTRADORES -->
+                    <a th:if="${usuario != null and (usuario.administrador or usuario.autor)}"
+                       href="/articulos/nuevoArticulo"
+                       class="btn btn-sm btn-outline-primary me-3">
+                        Crear artículo
+                    </a>
+
+                    <a th:if="${usuario == null}"
+                       class="btn btn-sm btn-outline-secondary"
+                       href="/login">
+                        Login
+                    </a>
+
+                    <!-- Logueado -->
+                    <form th:if="${usuario != null}"
+                          method="post"
+                          action="/logout"
+                          class="d-inline">
+                        <button class="btn btn-sm btn-outline-danger" type="submit">
+                            Logout
+                        </button>
+                    </form>
+
+                </div>
+
+            </div>
+        </header>
+
+        <!-- BARRA DE ETIQUETAS-->
+        <div class="nav-scroller py-1 mb-2">
+            <nav class="nav d-flex flex-wrap">
+
+                <a th:each="e : ${etiquetasRecientes}"
+                   class="p-2 text-muted text-uppercase text-decoration-none"
+                   th:href="@{'/etiquetas/' + ${e.etiqueta}}"
+                   th:text="${e.etiqueta}">
+                    Etiqueta
+                </a>
+
+            </nav>
+        </div>
+
+        <!-- BANNER -->
+        <div class="jumbotron p-3 p-md-5 text-white rounded" id="banner">
+            <div class="col-md-6 px-0">
+                <h1 class="display-4 font-italic"
+                    th:text="${articulo.titulo}">
+                </h1>
+
+                <p class="lead my-3"
+                   th:text="${#temporals.format(articulo.fecha,'dd/MM/yyyy HH:mm')} + ' - por ' + ${articulo.autor.nombre}">
+                </p>
+
+            </div>
+        </div>
+
+    </div>
+
+    <main role="main" class="container">
+        <div class="row">
+            <div class="col-md-8 blog-main">
+
+                <!-- TITULO -->
+
+                <div class="blog-post">
+
+                    <h2 class="blog-post-title pt-3"
+                        th:text="${articulo.titulo}">
+                    </h2>
+
+                    <p class="blog-post-meta"
+                       th:text="${#temporals.format(articulo.fecha,'dd/MM/yyyy HH:mm')}">
+                    </p>
+
+                    <p th:text="${articulo.cuerpo}"></p>
+
+                </div>
+            </div>
+
+            <!-- BARRA LATERAL -->
+            <aside class="col-md-4 pt-4 blog-sidebar">
+
+                <!-- ETIQUETAS -->
+                <div class="p-3">
+                    <h4 class="font-italic">Etiquetas</h4>
+
+                    <a th:each="et : ${articulo.listaEtiquetas}"
+                       class="badge me-1 text-decoration-none text-bg-secondary"
+                       th:href="@{'/etiquetas/' + ${et.etiqueta}}"
+                       th:text="${et.etiqueta}">
+                        Etiqueta
+                    </a>
+                </div>
+
+
+            </aside>
+
+        </div>
+
+        <!-- BOTON EDITAR ARTICULO (SOLO PARA ADMIN O AUTOR DEL ARTICULO)-->
+        <a th:if="${usuario != null and (usuario.administrador or usuario.username == articulo.autor.username)}"
+           th:href="@{'/articulos/' + ${articulo.id} + '/editar'}"
+           class="btn btn-warning">
+            Editar artículo
+        </a>
+
+        <!-- BOTON ELIMINAR ARTICULO (SOLO PARA ADMIN O AUTOR DEL ARTICULO)-->
+        <button
+                th:if="${usuario != null and (usuario.administrador or usuario.username == articulo.autor.username)}"
+                type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalEliminarArticulo">
+            Eliminar artículo
+        </button>
+
+    </main>
+
+    <!-- SECCION DE COMENTARIOS-->
+    <hr class="my-5">
+
+    <section class="container mb-4">
+        <h4 class="mb-4">Comentarios</h4>
+
+        <!-- Agregar comentario -->
+        <div th:if="${usuario != null}" class="pb-4">
+            <button class="btn btn-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalComentario">
+                Añadir comentario
+            </button>
+        </div>
+
+        <div th:if="${usuario == null}" class="alert alert-info mt-3">
+            Debes <a href="/login">iniciar sesión</a> para comentar.
+        </div>
+
+        <!-- Lista de comentarios -->
+        <div th:each="comentario : ${articulo.listaComentarios}"
+             class="card mb-3">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between">
+                    <strong th:text="${comentario.autor.username}"></strong>
+
+                    <small class="text-muted"
+                           th:text="${#temporals.format(comentario.fecha,'dd/MM/yyyy HH:mm')}">
+                    </small>
+                </div>
+
+                <p class="mt-2 mb-0"
+                   th:text="${comentario.comentario}">
+                </p>
+
+                <form th:if="${usuario != null and (usuario.administrador or usuario.username == comentario.autor.username)}"
+                      method="post"
+                      th:action="@{'/articulos/' + ${articulo.id} + '/comentarios/' + ${comentario.id} + '/eliminar'}"
+                      class="mt-2"
+                      onsubmit="return confirm('¿Seguro que deseas eliminar este comentario?');">
+
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        Eliminar
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+    </section>
+
+
+    <footer class="blog-footer">
+        <p>Derechos reservados</p>
+        <p>
+            <a href="#">Volver al inicio</a>
+        </p>
+    </footer>
+
+    <!-- Modal del comentario -->
+    <div class="modal fade" id="modalComentario" tabindex="-1"
+         aria-labelledby="modalComentarioLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalComentarioLabel">Nuevo comentario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <form method="post"
+                      th:action="@{'/articulos/' + ${articulo.id} + '/comentarios'}">
+
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="comentario" class="form-label">Comentario</label>
+                            <textarea id="comentario"
+                                      name="comentario"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Escribe tu comentario aquí..."
+                                      required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Publicar
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIRMACION ELIMINAR ARTICULO -->
+    <div class="modal fade" id="modalEliminarArticulo" tabindex="-1"
+         aria-labelledby="modalEliminarArticuloLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEliminarArticuloLabel">
+                        Confirmar eliminación
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p>¿Seguro que deseas eliminar este artículo?</p>
+                    <p class="text-danger mb-0">Esta acción no se puede deshacer.</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+
+                    <!-- BOTON ELIMINAR DEFINITIVO -->
+                    <form method="post"
+                          th:action="@{'/articulos/' + ${articulo.id} + '/eliminar'}">
+                        <button type="submit" class="btn btn-danger">
+                            Confirmar
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript de Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

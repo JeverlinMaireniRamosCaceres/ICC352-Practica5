@@ -1,0 +1,45 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+application {
+    mainClass = 'Main'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // javalin
+    implementation("io.javalin:javalin:6.7.0")
+
+    // thymeleaf
+    implementation("org.thymeleaf:thymeleaf:3.1.3.RELEASE")
+
+    //Librería jasypt
+    implementation 'org.jasypt:jasypt:1.9.3'
+
+    implementation("io.javalin:javalin-rendering:6.7.0")
+
+    implementation("org.slf4j:slf4j-simple:2.0.17")
+
+    // ORM - Hibernate
+    implementation 'org.hibernate.orm:hibernate-core:6.0.2.Final'
+
+    //Driver de la conexión en H2
+    implementation 'com.h2database:h2:2.1.214'
+    implementation 'org.postgresql:postgresql:42.3.8'
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
