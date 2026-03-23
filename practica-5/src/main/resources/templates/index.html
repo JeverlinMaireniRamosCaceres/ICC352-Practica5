@@ -23,18 +23,24 @@
             <!-- BOTON LOGIN/LOGOUT -->
             <div class="col-4 d-flex justify-content-end align-items-center">
 
+                <!-- BOTON PANEL DE CHAT -->
+                <a th:if="${usuario != null and (usuario.administrador or usuario.autor)}"
+                   href="/panelChat"
+                   class="btn btn-sm btn-outline-secondary me-2 text-nowrap">
+                    Panel de chat
+                </a>
+
                 <!-- BOTON PARA CREAR NUEVO USUARIO -->
                 <a th:if="${usuario != null and usuario.administrador}"
                    th:href="@{/usuarios/nuevo}"
-                   class="btn btn-outline-success btn-sm me-3">
+                   class="btn btn-outline-success btn-sm me-2 text-nowrap">
                     Nuevo usuario
                 </a>
 
-
-                <!-- BOTON PARA CREAR NUEVO ARTICULO, SOLO AUTORES O ADMINISTRADORES -->
+                <!-- BOTON PARA CREAR NUEVO ARTICULO -->
                 <a th:if="${usuario != null and (usuario.administrador or usuario.autor)}"
                    href="/articulos/nuevoArticulo"
-                   class="btn btn-sm btn-outline-primary me-3">
+                   class="btn btn-sm btn-outline-primary me-2 text-nowrap">
                     Crear artículo
                 </a>
 

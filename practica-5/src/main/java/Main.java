@@ -729,6 +729,23 @@ public class Main {
             ctx.render("templates/index.html", model);
         });
 
+        // --------------------- PANEL DE CHAT ----------------------
+
+        // redirigir al panel
+        app.get("/panelChat", ctx -> {
+            Usuario usuario = ctx.sessionAttribute("usuario");
+
+            if (usuario == null || (!usuario.isAdministrador() && !usuario.isAutor())) {
+                ctx.status(403).result("No autorizado");
+                return;
+            }
+
+            Map<String, Object> model = new HashMap<>();
+            model.put("usuario", usuario);
+
+            ctx.render("templates/panelChat.html", model);
+        });
+
         // ------------------- WEBSOCKETS --------------------
         // websocket chat de usuarios
         app.ws("/chat", ws -> {
