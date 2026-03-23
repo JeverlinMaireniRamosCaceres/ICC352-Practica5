@@ -177,3 +177,83 @@ h1, h2, h3, h4, h5, h6 {
     color: darkgray;
     font-weight: 250;
 }
+
+/* WIDGET DE CHAT */
+#chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+#btn-abrir-chat {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    border-radius: 50%;
+    background-color: #6A5ACD;
+    border: none;
+    color: white;
+}
+
+#btn-abrir-chat:hover {
+    background-color: #5a4abf;
+}
+
+#ventana-chat {
+    width: 320px;
+    display: none;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+#ventana-chat .card-header {
+    background-color: #6A5ACD !important;
+    color: white;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 1rem;
+}
+
+#ventana-chat .card-header button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+#paso-nombre p {
+    color: #999;
+}
+
+#paso-nombre .btn {
+    background-color: #6A5ACD;
+    border: none;
+}
+
+#paso-nombre .btn:hover {
+    background-color: #5a4abf;
+}
+
+#mensajes-chat {
+    height: 250px;
+    overflow-y: auto;
+    background: #F3E5F5;
+    padding: 10px;
+}
+
+#ventana-chat .card-footer {
+    background-color: white;
+    border-top: 1px solid #e5e5e5;
+}
+
+#ventana-chat .card-footer .btn {
+    background-color: #6A5ACD;
+    border: none;
+}
+
+#ventana-chat .card-footer .btn:hover {
+    background-color: #5a4abf;
+}

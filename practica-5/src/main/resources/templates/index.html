@@ -124,6 +124,47 @@
     </p>
 </footer>
 
+<!-- WIDGET DE CHAT -->
+<div id="chat-widget">
+
+    <!-- Botón para abrir el chat -->
+    <button id="btn-abrir-chat" class="btn btn-primary shadow" onclick="abrirChat()">
+        💬
+    </button>
+
+    <!-- Ventana del chat -->
+    <div id="ventana-chat" class="card shadow-lg">
+
+        <!-- Header -->
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <span>Chat en vivo</span>
+            <button class="btn btn-sm text-white" onclick="cerrarChat()">✕</button>
+        </div>
+
+        <!-- pedir nombre -->
+        <div id="paso-nombre" class="card-body">
+            <p class="text-muted small">Ingresa tu nombre para iniciar el chat</p>
+            <input type="text" id="input-nombre" class="form-control mb-2" placeholder="Tu nombre">
+            <button class="btn btn-primary w-100" onclick="iniciarChat()">Iniciar chat</button>
+        </div>
+
+        <!-- chat activo -->
+        <div id="paso-chat" class="d-none">
+            <div id="mensajes-chat" class="card-body">
+            </div>
+            <div class="card-footer d-flex gap-2">
+                <input type="text" id="input-mensaje" class="form-control"
+                       placeholder="Escribe un mensaje..."
+                       onkeypress="if(event.key==='Enter') enviarMensaje()">
+                <button class="btn btn-primary" onclick="enviarMensaje()">➤</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="/js/chat.js"></script>
+
 <!-- JavaScript de Bootstrap -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/paginacion.js"></script>

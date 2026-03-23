@@ -1,4 +1,5 @@
 import entidades.*;
+import org.eclipse.jetty.websocket.api.Session;
 import servicios.*;
 import entidades.Usuario;
 import io.javalin.Javalin;
@@ -13,8 +14,14 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Main {
+
+    // Variables para el chat
+    public static Map<String, Session> usuariosChat = new ConcurrentHashMap<>();
+    public static Map<String, String> nombresUsuarios = new ConcurrentHashMap<>();
+    public static Map<String, Session> adminsConectados = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
 
@@ -720,6 +727,47 @@ public class Main {
             model.put("totalPages", 1);
 
             ctx.render("templates/index.html", model);
+        });
+
+        // ------------------- WEBSOCKETS --------------------
+        // websocket chat de usuarios
+        app.ws("/chat", ws -> {
+
+            ws.onConnect(ctx -> {
+                System.out.println("Usuario conectado al chat: " + ctx.sessionId());
+                usuariosChat.put(ctx.sessionId(), ctx.session);
+            });
+
+            ws.onMessage(ctx -> {
+                String sessionId = ctx.sessionId();
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, String> data = mapper.readValue(ctx.message(), Map.class);
+
+                String tipo = data.get("tipo");
+
+                if ("inicio".equals(tipo)) {
+                    String nombre = data.get("nombre");
+                    nombresUsuarios.put(sessionId, nombre);
+                    System.out.println("Usuario identificado: " + nombre);
+
+                } else if ("mensaje".equals(tipo)) {
+                    String nombre = nombresUsuarios.getOrDefault(sessionId, "Anónimo");
+                    String mensaje = data.get("mensaje");
+                    System.out.println("Mensaje de " + nombre + ": " + mensaje);
+                }
+            });
+
+            ws.onClose(ctx -> {
+                String sessionId = ctx.sessionId();
+                String nombre = nombresUsuarios.getOrDefault(sessionId, "Anónimo");
+                System.out.println("Usuario desconectado: " + nombre);
+                usuariosChat.remove(sessionId);
+                nombresUsuarios.remove(sessionId);
+            });
+
+            ws.onError(ctx -> {
+                System.out.println("Error en chat: " + ctx.error().getMessage());
+            });
         });
 
     }
