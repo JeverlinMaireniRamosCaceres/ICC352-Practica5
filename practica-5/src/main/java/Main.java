@@ -22,6 +22,8 @@ public class Main {
     public static Map<String, Session> usuariosChat = new ConcurrentHashMap<>();
     public static Map<String, String> nombresUsuarios = new ConcurrentHashMap<>();
     public static Map<String, Session> adminsConectados = new ConcurrentHashMap<>();
+    public static Map<String, List<String>> mensajesPorUsuario = new ConcurrentHashMap<>();
+    public static Map<Session, String> chatIdPorSesion = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
 
@@ -747,16 +749,81 @@ public class Main {
         });
 
         // ------------------- WEBSOCKETS --------------------
+        // websocket chat de administradores
+        app.ws("/admin-chat", ws -> {
+            ws.onConnect(ctx -> {
+                System.out.println("Admin conectado al panel: " + ctx.sessionId());
+                adminsConectados.put(ctx.sessionId(), ctx.session);
+                ObjectMapper mapper = new ObjectMapper();
+                for (Map.Entry<String, String> entry : nombresUsuarios.entrySet()) {
+                    String sessionIdUsuario = entry.getKey();
+                    String nombreUsuario = entry.getValue();
+
+                    if (ctx.session.isOpen()) {
+                        ctx.session.getRemote().sendString(
+                                "{\"tipo\":\"nuevoUsuario\",\"sessionId\":\"" + sessionIdUsuario + "\",\"nombre\":\"" + nombreUsuario + "\"}"
+                        );
+                    }
+                    List<String> historial = mensajesPorUsuario.get(sessionIdUsuario);
+                    if (historial != null) {
+                        for (String mensajeGuardado : historial) {
+                            String emisor = mensajeGuardado.startsWith("ADMIN:") ? "admin" : "usuario";
+                            String texto = mensajeGuardado.substring(mensajeGuardado.indexOf(":") + 1);
+                            if (ctx.session.isOpen()) {
+                                ctx.session.getRemote().sendString(
+                                        "{\"tipo\":\"historial\",\"sessionId\":\"" + sessionIdUsuario + "\",\"nombre\":\"" + nombreUsuario + "\",\"emisor\":\"" + emisor + "\",\"mensaje\":\"" + texto + "\"}"
+                                );
+                            }
+                        }
+                    }
+                }
+            });
+
+            ws.onMessage(ctx -> {
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, String> data = mapper.readValue(ctx.message(), Map.class);
+
+                String sessionIdUsuario = data.get("sessionId");
+                String mensaje = data.get("mensaje");
+
+                if (sessionIdUsuario == null || mensaje == null || mensaje.isBlank()) {
+                    return;
+                }
+
+                if (mensajesPorUsuario.containsKey(sessionIdUsuario)) {
+                    mensajesPorUsuario.get(sessionIdUsuario).add("ADMIN:" + mensaje);
+                }
+
+                Session sesionUsuario = usuariosChat.get(sessionIdUsuario);
+
+                if (sesionUsuario != null && sesionUsuario.isOpen()) {
+                    sesionUsuario.getRemote().sendString(
+                            "{\"tipo\":\"mensajeAdmin\",\"mensaje\":\"" + mensaje + "\"}"
+                    );
+                }
+            });
+
+            ws.onClose(ctx -> {
+                adminsConectados.remove(ctx.sessionId());
+                System.out.println("Admin desconectado del panel: " + ctx.sessionId());
+            });
+
+            ws.onError(ctx -> {
+                System.out.println("Error en panel admin: " + ctx.error().getMessage());
+            });
+        });
         // websocket chat de usuarios
         app.ws("/chat", ws -> {
 
             ws.onConnect(ctx -> {
-                System.out.println("Usuario conectado al chat: " + ctx.sessionId());
-                usuariosChat.put(ctx.sessionId(), ctx.session);
+                String chatId = java.util.UUID.randomUUID().toString();
+                System.out.println("Usuario conectado al chat: " + chatId);
+                usuariosChat.put(chatId, ctx.session);
+                chatIdPorSesion.put(ctx.session, chatId);
             });
 
             ws.onMessage(ctx -> {
-                String sessionId = ctx.sessionId();
+                String sessionId = chatIdPorSesion.get(ctx.session);
                 ObjectMapper mapper = new ObjectMapper();
                 Map<String, String> data = mapper.readValue(ctx.message(), Map.class);
 
@@ -765,21 +832,44 @@ public class Main {
                 if ("inicio".equals(tipo)) {
                     String nombre = data.get("nombre");
                     nombresUsuarios.put(sessionId, nombre);
+                    mensajesPorUsuario.put(sessionId, new ArrayList<>());
                     System.out.println("Usuario identificado: " + nombre);
+
+                    for (Session sesionAdmin : adminsConectados.values()) {
+                        if (sesionAdmin.isOpen()) {
+                            sesionAdmin.getRemote().sendString(
+                                    "{\"tipo\":\"nuevoUsuario\",\"sessionId\":\"" + sessionId + "\",\"nombre\":\"" + nombre + "\"}"
+                            );
+                        }
+                    }
 
                 } else if ("mensaje".equals(tipo)) {
                     String nombre = nombresUsuarios.getOrDefault(sessionId, "Anónimo");
                     String mensaje = data.get("mensaje");
+
+                    mensajesPorUsuario.get(sessionId).add("USER:" + mensaje);
                     System.out.println("Mensaje de " + nombre + ": " + mensaje);
+
+                    for (Session sesionAdmin : adminsConectados.values()) {
+                        if (sesionAdmin.isOpen()) {
+                            sesionAdmin.getRemote().sendString(
+                                    "{\"tipo\":\"mensaje\",\"sessionId\":\"" + sessionId + "\",\"nombre\":\"" + nombre + "\",\"mensaje\":\"" + mensaje + "\"}"
+                            );
+                        }
+                    }
                 }
             });
 
             ws.onClose(ctx -> {
-                String sessionId = ctx.sessionId();
-                String nombre = nombresUsuarios.getOrDefault(sessionId, "Anónimo");
+                String sessionId = chatIdPorSesion.get(ctx.session);
+                String nombre = sessionId != null ? nombresUsuarios.getOrDefault(sessionId, "Anónimo") : "Anónimo";
                 System.out.println("Usuario desconectado: " + nombre);
-                usuariosChat.remove(sessionId);
-                nombresUsuarios.remove(sessionId);
+
+                if (sessionId != null) {
+                    usuariosChat.remove(sessionId);
+                }
+
+                chatIdPorSesion.remove(ctx.session);
             });
 
             ws.onError(ctx -> {

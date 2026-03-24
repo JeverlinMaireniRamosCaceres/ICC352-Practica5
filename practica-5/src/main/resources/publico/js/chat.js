@@ -33,7 +33,9 @@ function iniciarChat() {
 
     webSocket.onmessage = function (event) {
         const data = JSON.parse(event.data);
-        agregarMensaje(data.mensaje, 'admin');
+        if (data.tipo === 'mensajeAdmin') {
+            agregarMensaje(data.mensaje, 'admin');
+        }
     };
 
     webSocket.onclose = function () {
