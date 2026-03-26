@@ -79,3 +79,18 @@ function agregarMensaje(texto, tipo) {
     contenedor.appendChild(div);
     contenedor.scrollTop = contenedor.scrollHeight;
 }
+
+function terminarChat() {
+    if (webSocket) {
+        webSocket.close();
+        webSocket = null;
+        nombreUsuario = '';
+
+        document.getElementById('paso-nombre').classList.remove('d-none');
+        document.getElementById('paso-chat').classList.add('d-none');
+        document.getElementById('input-nombre').value = '';
+        document.getElementById('mensajes-chat').innerHTML = '';
+
+        agregarMensaje('Chat finalizado.', 'sistema');
+    }
+}

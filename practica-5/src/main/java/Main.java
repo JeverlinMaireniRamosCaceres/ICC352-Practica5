@@ -46,6 +46,10 @@ public class Main {
             config.staticFiles.add("/publico", Location.CLASSPATH);
 
             config.fileRenderer(new JavalinThymeleaf());
+            config.jetty.modifyWebSocketServletFactory(factory -> {
+                factory.setIdleTimeout(java.time.Duration.ofMinutes(30));
+            });
+
         }).start(7000);
 
         // Auto login por cookie
@@ -812,6 +816,7 @@ public class Main {
                 System.out.println("Error en panel admin: " + ctx.error().getMessage());
             });
         });
+
         // websocket chat de usuarios
         app.ws("/chat", ws -> {
 
@@ -867,6 +872,20 @@ public class Main {
 
                 if (sessionId != null) {
                     usuariosChat.remove(sessionId);
+                    nombresUsuarios.remove(sessionId);
+                    mensajesPorUsuario.remove(sessionId);
+
+                    for (Session sesionAdmin : adminsConectados.values()) {
+                        if (sesionAdmin.isOpen()) {
+                            try {
+                                sesionAdmin.getRemote().sendString(
+                                        "{\"tipo\":\"usuarioDesconectado\",\"sessionId\":\"" + sessionId + "\"}"
+                                );
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
                 }
 
                 chatIdPorSesion.remove(ctx.session);

@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'application'
+    id 'com.gradleup.shadow' version '8.3.9'
 }
 
 group = 'org.example'
@@ -15,30 +16,31 @@ repositories {
 }
 
 dependencies {
-    // javalin
-    implementation("io.javalin:javalin:6.7.0")
+    // Javalin
+    implementation "io.javalin:javalin:6.7.0"
+    implementation "io.javalin:javalin-rendering:6.7.0"
 
-    // thymeleaf
-    implementation("org.thymeleaf:thymeleaf:3.1.3.RELEASE")
+    // Thymeleaf
+    implementation "org.thymeleaf:thymeleaf:3.1.3.RELEASE"
 
-    //Librería jasypt
-    implementation 'org.jasypt:jasypt:1.9.3'
+    // Jasypt
+    implementation "org.jasypt:jasypt:1.9.3"
 
-    implementation("io.javalin:javalin-rendering:6.7.0")
+    // Logging
+    implementation "org.slf4j:slf4j-simple:2.0.17"
 
-    implementation("org.slf4j:slf4j-simple:2.0.17")
+    // Hibernate ORM
+    implementation "org.hibernate.orm:hibernate-core:6.0.2.Final"
 
-    // ORM - Hibernate
-    implementation 'org.hibernate.orm:hibernate-core:6.0.2.Final'
+    // H2
+    implementation "com.h2database:h2:2.1.214"
 
-    //Driver de la conexión en H2
-    implementation 'com.h2database:h2:2.1.214'
-    implementation 'org.postgresql:postgresql:42.3.8'
+    // PostgreSQL / CockroachDB JDBC
+    implementation "org.postgresql:postgresql:42.3.8"
 
     // Jackson
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.20.1'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.1'
-
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.20.1"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.1"
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -54,4 +56,11 @@ run {
             ?: System.getenv("JDBC_DATABASE_URL")
             ?: ""
     environment "JDBC_DATABASE_URL", jdbcUrl
+}
+
+shadowJar {
+    archiveBaseName.set("app")
+    archiveClassifier.set("")
+    archiveVersion.set("")
+    mergeServiceFiles()
 }

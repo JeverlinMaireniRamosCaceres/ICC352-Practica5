@@ -9,33 +9,40 @@ public class BootStrapServices {
     private static BootStrapServices instancia;
 
     private BootStrapServices() {
-
     }
 
-    public static BootStrapServices getInstancia(){
-        if(instancia == null){
-            instancia=new BootStrapServices();
+    public static BootStrapServices getInstancia() {
+        if (instancia == null) {
+            instancia = new BootStrapServices();
         }
         return instancia;
     }
 
     public void startDb() {
         try {
-            // modo servidor H2
-            Server.createTcpServer("-tcpPort", "9092", "-tcpAllowOthers", "-tcpDaemon", "-ifNotExists").start();
+            // Servidor TCP de H2
+            Server.createTcpServer(
+                    "-tcpPort", "9092",
+                    "-tcpAllowOthers",
+                    "-tcpDaemon",
+                    "-ifNotExists"
+            ).start();
 
-            // abriendo el cliente web, el 0 representa puerto aleatorio
-            String status = Server.createWebServer("-trace", "-webPort", "0").start().getStatus();
+            // Consola web de H2 en puerto fijo y accesible desde fuera del contenedor
+            String status = Server.createWebServer(
+                    "-web",
+                    "-webAllowOthers",
+                    "-webPort", "8082"
+            ).start().getStatus();
 
-            System.out.println("Status Web: "+status);
-        }catch (SQLException ex){
-            System.out.println("Problema con la base de datos: "+ex.getMessage());
+            System.out.println("Status Web: " + status);
+
+        } catch (SQLException ex) {
+            System.out.println("Problema con la base de datos: " + ex.getMessage());
         }
     }
 
-    public void init(){
-
+    public void init() {
         startDb();
     }
-
 }

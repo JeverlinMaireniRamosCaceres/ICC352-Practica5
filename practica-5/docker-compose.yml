@@ -1,0 +1,8 @@
+services:
+  app:
+    build: .
+    ports:
+      - "7000:7000"
+      - "8082:8082"
+    environment:
+      - JDBC_DATABASE_URL=jdbc:postgresql://crafty-moth-23853.j77.aws-us-east-1.cockroachlabs.cloud:26257/practica5?sslmode=require&password=i9RGMcIygfwh4EkmP3r1yg&user=jeverlin
