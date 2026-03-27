@@ -768,7 +768,8 @@ public class Main {
                                 "{\"tipo\":\"nuevoUsuario\",\"sessionId\":\"" + sessionIdUsuario + "\",\"nombre\":\"" + nombreUsuario + "\"}"
                         );
                     }
-                    List<String> historial = mensajesPorUsuario.get(sessionIdUsuario);
+                    String nombreUsuario2 = nombresUsuarios.get(sessionIdUsuario);
+                    List<String> historial = nombreUsuario2 != null ? mensajesPorUsuario.get(nombreUsuario2) : null;
                     if (historial != null) {
                         for (String mensajeGuardado : historial) {
                             String emisor = mensajeGuardado.startsWith("ADMIN:") ? "admin" : "usuario";
@@ -794,8 +795,9 @@ public class Main {
                     return;
                 }
 
-                if (mensajesPorUsuario.containsKey(sessionIdUsuario)) {
-                    mensajesPorUsuario.get(sessionIdUsuario).add("ADMIN:" + mensaje);
+                String nombreUsuario = nombresUsuarios.get(sessionIdUsuario);
+                if (nombreUsuario != null && mensajesPorUsuario.containsKey(nombreUsuario)) {
+                    mensajesPorUsuario.get(nombreUsuario).add("ADMIN:" + mensaje);
                 }
 
                 Session sesionUsuario = usuariosChat.get(sessionIdUsuario);
@@ -837,7 +839,7 @@ public class Main {
                 if ("inicio".equals(tipo)) {
                     String nombre = data.get("nombre");
                     nombresUsuarios.put(sessionId, nombre);
-                    mensajesPorUsuario.put(sessionId, new ArrayList<>());
+                    mensajesPorUsuario.putIfAbsent(nombre, new ArrayList<>());
                     System.out.println("Usuario identificado: " + nombre);
 
                     for (Session sesionAdmin : adminsConectados.values()) {
@@ -845,14 +847,25 @@ public class Main {
                             sesionAdmin.getRemote().sendString(
                                     "{\"tipo\":\"nuevoUsuario\",\"sessionId\":\"" + sessionId + "\",\"nombre\":\"" + nombre + "\"}"
                             );
+                            List<String> historial = mensajesPorUsuario.get(nombre);
+                            for (String mensajeGuardado : historial) {
+                                String emisor = mensajeGuardado.startsWith("ADMIN:") ? "admin" : "usuario";
+                                String texto = mensajeGuardado.substring(mensajeGuardado.indexOf(":") + 1);
+                                try {
+                                    sesionAdmin.getRemote().sendString(
+                                            "{\"tipo\":\"historial\",\"sessionId\":\"" + sessionId + "\",\"nombre\":\"" + nombre + "\",\"emisor\":\"" + emisor + "\",\"mensaje\":\"" + texto + "\"}"
+                                    );
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
                         }
                     }
-
                 } else if ("mensaje".equals(tipo)) {
                     String nombre = nombresUsuarios.getOrDefault(sessionId, "Anónimo");
                     String mensaje = data.get("mensaje");
 
-                    mensajesPorUsuario.get(sessionId).add("USER:" + mensaje);
+                    mensajesPorUsuario.get(nombre).add("USER:" + mensaje);
                     System.out.println("Mensaje de " + nombre + ": " + mensaje);
 
                     for (Session sesionAdmin : adminsConectados.values()) {
@@ -873,7 +886,7 @@ public class Main {
                 if (sessionId != null) {
                     usuariosChat.remove(sessionId);
                     nombresUsuarios.remove(sessionId);
-                    mensajesPorUsuario.remove(sessionId);
+
 
                     for (Session sesionAdmin : adminsConectados.values()) {
                         if (sesionAdmin.isOpen()) {

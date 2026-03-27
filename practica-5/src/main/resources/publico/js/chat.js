@@ -1,5 +1,6 @@
 let webSocket;
-let nombreUsuario = '';
+let nombreUsuario = sessionStorage.getItem('chatNombre') || '';
+let mensajesGuardados = JSON.parse(sessionStorage.getItem('chatMensajes') || '[]');
 
 function abrirChat() {
     document.getElementById('btn-abrir-chat').style.display = 'none';
@@ -19,7 +20,11 @@ function iniciarChat() {
     }
 
     nombreUsuario = nombre;
+    sessionStorage.setItem('chatNombre', nombre);
+    conectarWebSocket();
+}
 
+function conectarWebSocket() {
     webSocket = new WebSocket('ws://' + location.hostname + ':' + location.port + '/chat');
 
     webSocket.onopen = function () {
@@ -28,7 +33,13 @@ function iniciarChat() {
         document.getElementById('paso-nombre').classList.add('d-none');
         document.getElementById('paso-chat').classList.remove('d-none');
 
-        agregarMensaje('Conectado. Espera a que un administrador responda.', 'sistema');
+        const contenedor = document.getElementById('mensajes-chat');
+        contenedor.innerHTML = '';
+        mensajesGuardados.forEach(msg => renderMensaje(msg.texto, msg.tipo));
+
+        if (mensajesGuardados.length === 0) {
+            agregarMensaje('Conectado. Espera a que un administrador responda.', 'sistema');
+        }
     };
 
     webSocket.onmessage = function (event) {
@@ -57,7 +68,7 @@ function enviarMensaje() {
     input.value = '';
 }
 
-function agregarMensaje(texto, tipo) {
+function renderMensaje(texto, tipo) {
     const contenedor = document.getElementById('mensajes-chat');
     const div = document.createElement('div');
     div.classList.add('mb-2');
@@ -80,17 +91,41 @@ function agregarMensaje(texto, tipo) {
     contenedor.scrollTop = contenedor.scrollHeight;
 }
 
+function agregarMensaje(texto, tipo) {
+    renderMensaje(texto, tipo);
+    if (tipo === 'usuario' || tipo === 'admin') {
+        mensajesGuardados.push({ texto, tipo });
+        sessionStorage.setItem('chatMensajes', JSON.stringify(mensajesGuardados));
+    }
+}
+
 function terminarChat() {
     if (webSocket) {
         webSocket.close();
         webSocket = null;
-        nombreUsuario = '';
-
-        document.getElementById('paso-nombre').classList.remove('d-none');
-        document.getElementById('paso-chat').classList.add('d-none');
-        document.getElementById('input-nombre').value = '';
-        document.getElementById('mensajes-chat').innerHTML = '';
-
-        agregarMensaje('Chat finalizado.', 'sistema');
     }
+    nombreUsuario = '';
+    mensajesGuardados = [];
+    sessionStorage.removeItem('chatNombre');
+    sessionStorage.removeItem('chatMensajes');
+
+    document.getElementById('paso-nombre').classList.remove('d-none');
+    document.getElementById('paso-chat').classList.add('d-none');
+    document.getElementById('input-nombre').value = '';
+    document.getElementById('mensajes-chat').innerHTML = '';
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (nombreUsuario) {
+        document.getElementById('paso-nombre').classList.add('d-none');
+        document.getElementById('paso-chat').classList.remove('d-none');
+        document.getElementById('ventana-chat').style.display = 'block';
+        document.getElementById('btn-abrir-chat').style.display = 'none';
+
+        const contenedor = document.getElementById('mensajes-chat');
+        contenedor.innerHTML = '';
+        mensajesGuardados.forEach(msg => renderMensaje(msg.texto, msg.tipo));
+
+        conectarWebSocket();
+    }
+});
