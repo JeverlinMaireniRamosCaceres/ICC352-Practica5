@@ -176,7 +176,8 @@
 </footer>
 
 <!-- WIDGET DE CHAT -->
-<div id="chat-widget">
+<div id="chat-widget"
+     th:if="${usuario == null or (!usuario.administrador and !usuario.autor)}">
 
     <!-- Botón para abrir el chat -->
     <button id="btn-abrir-chat" class="btn btn-primary shadow" onclick="abrirChat()">
